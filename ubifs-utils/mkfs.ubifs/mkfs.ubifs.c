@@ -1191,6 +1191,11 @@ static int inode_add_xattr(struct ubifs_ino_node *host_ino,
 			goto out_free;
 		}
 
+		/* Adding selinux xattr has been taken care by inode_add_selinux_xattr() */
+		if (strncmp("security.selinux", name, 16) == 0) {
+			continue;
+		}
+
 		if (!strcmp(name, "user.image-inode-number")) {
 			ino_t inum_from_xattr;
 
@@ -1356,9 +1361,10 @@ static int add_inode(struct stat *st, ino_t inum, void *data,
 	if (xattr_path) {
 #ifdef WITH_SELINUX
 		ret = inode_add_selinux_xattr(ino, xattr_path, st, inum);
-#else
-		ret = inode_add_xattr(ino, xattr_path, st, inum);
+		if (ret < 0)
+			return ret;
 #endif
+		ret = inode_add_xattr(ino, xattr_path, st, inum);
 		if (ret < 0)
 			return ret;
 	}
